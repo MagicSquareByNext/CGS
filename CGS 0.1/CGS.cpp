@@ -2,7 +2,7 @@
 //让每一个住在大山的小伙伴都有一个
 //创造游戏的梦
 //CreateGameStudio
-//2015年11月4日10:20:15-QuarterColor&MagicSquare 我只是想试试怎么用...
+//2015年11月4日10:20:15-QuarterColor&MagicSquare
 //////////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
