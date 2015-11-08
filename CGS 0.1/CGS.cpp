@@ -7,20 +7,13 @@
 
 #include "stdafx.h"
 #include "CGS.h"
-#include <string>
-using namespace std;
+
 #define MAX_IMAGE_LIST 100
-#include <iostream>
-#include <math.h>
+
 
 //////////////////////////////////////////////////////////////////////////
 //Gdi+
 //////////////////////////////////////////////////////////////////////////
-
-#pragma comment(lib, "./GDIPlus/Gdiplus.lib")
-#include "./GDIPlus/Includes/Gdiplus.h"
-
-using namespace Gdiplus;
 
 static ULONG_PTR gdiplusToken;
 static Gdiplus::GdiplusStartupInput gdiplusStartupInput;
@@ -30,17 +23,6 @@ static wchar_t wcharBuffer[WCHAR_BUFFER_MAX];
 //////////////////////////////////////////////////////////////////////////
 //处理PNG图片
 //////////////////////////////////////////////////////////////////////////
-
-struct IMAGE_PNG
-{
-public:
-	int getHeight();
-	int getWidth();
-	IMAGE_PNG();
-	virtual ~IMAGE_PNG();
-	Gdiplus::Bitmap * pngImage;
-	float angle;
-};
 
 IMAGE_PNG::IMAGE_PNG()
 {
@@ -112,12 +94,12 @@ Gdiplus::Bitmap * ResizeBitmap(Gdiplus::Bitmap * bmpSrc, int destWidth, int dest
 	return bmpDest;
 }
 
-void loadimage(IMAGE_PNG * image, LPCTSTR pImgFile, int nWidth, int nHeight)
+void loadimage(IMAGE_PNG * image, const char* pImgFile, int nWidth, int nHeight)
 {
 	if (image == NULL || image->pngImage != NULL)
 		return;
 
-	wchar_t * wFileName = charToWChar(pImgFile);
+	wchar_t * wFileName = charToWChar((char*)pImgFile);
 
 	std::wcout << wFileName << endl;
 
@@ -200,9 +182,10 @@ void close_game()
 }
 
 //////////////////////////////////////////////////////////////////////////
-//角色类
+//元素类
 //////////////////////////////////////////////////////////////////////////
 
+//附加属性类
 class Adt
 {
 public:
@@ -237,13 +220,16 @@ private:
 	int m_value;
 };
 
+//创建角色
 class character
 {
 public:
 	character();
 	character(int, string);
 	~character();
+	//添加附加属性
 	void AddAttribute(string, int);
+	//改变附加属性
 	void changeAddAttribute(string, int);
 	void SetCharacterIMG()
 	{
@@ -251,7 +237,9 @@ public:
 	}
 private:
 	int searchAddAttribute(string);
-	int m_id;
+	int init_id,init_life,init_blue;
+	int real_life, real_blue;
+	int max_life, max_blue;
 	string m_name;
 	IMAGE character_img[MAX_IMAGE_LIST];
 	int character_img_count;
@@ -259,9 +247,9 @@ private:
 	int add_att_count;
 };
 
-character::character() :m_id(0), m_name(0), add_att_count(0), character_img_count(0) {}
+character::character() :init_id(0), m_name(0), add_att_count(0), character_img_count(0) {}
 
-character::character(int id, string name) : m_id(id), m_name(name), add_att_count(0), character_img_count(0) {}
+character::character(int id, string name) : init_id(id), m_name(name), add_att_count(0), character_img_count(0) {}
 
 void character::AddAttribute(string name, int value)
 {
@@ -314,3 +302,65 @@ scene::~scene()
 //////////////////////////////////////////////////////////////////////////
 //DEBUG
 //////////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////////////
+//视频
+//////////////////////////////////////////////////////////////////////////
+class Video
+{
+public:
+	Video(string,int);
+	~Video();
+	void play();
+	
+private:
+	int i;
+	string s;
+	HWND hwnd = MCIWndCreate(GetHWnd(), NULL, WS_CHILD | WS_VISIBLE | MCIWNDF_NOMENU | MCIWNDF_NOPLAYBAR, NULL);
+};
+
+Video::Video(string address,int time):s(address),i(time)
+{
+	
+}
+
+void Video::play()
+{
+	SetWindowPos(hwnd, HWND_TOP, 0, 0, 0, 0, SWP_SHOWWINDOW);
+	MCIWndOpen(hwnd, s.c_str(), NULL);
+	MCIWndPlay(hwnd);
+	Sleep(i);
+	MCIWndClose(hwnd);
+	cleardevice();
+}
+
+Video::~Video()
+{
+}
+
+//////////////////////////////////////////////////////////////////////////
+//音乐
+//////////////////////////////////////////////////////////////////////////
+
+
+Music::Music(string address, string alias)
+{
+	this->address = "open " + address + " type MPEGVideo alias " + alias;
+	this->alias = "play " + alias;
+}
+
+void Music::prepare()
+{
+	mciSendString(address.c_str(), NULL, 0, NULL);
+}
+
+void Music::play()
+{
+	mciSendString(alias.c_str(), NULL, 0, NULL);
+}
+
+Music::~Music()
+{
+}
+
