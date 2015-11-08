@@ -191,9 +191,10 @@ void close_game()
 }
 
 //////////////////////////////////////////////////////////////////////////
-//角色类
+//元素类
 //////////////////////////////////////////////////////////////////////////
 
+//附加属性类
 class Adt
 {
 public:
@@ -228,13 +229,16 @@ private:
 	int m_value;
 };
 
+//创建角色
 class character
 {
 public:
 	character();
 	character(int, string);
 	~character();
+	//添加附加属性
 	void AddAttribute(string, int);
+	//改变附加属性
 	void changeAddAttribute(string, int);
 	void SetCharacterIMG()
 	{
@@ -242,7 +246,9 @@ public:
 	}
 private:
 	int searchAddAttribute(string);
-	int m_id;
+	int init_id,init_life,init_blue;
+	int real_life, real_blue;
+	int max_life, max_blue;
 	string m_name;
 	IMAGE character_img[MAX_IMAGE_LIST];
 	int character_img_count;
@@ -250,9 +256,9 @@ private:
 	int add_att_count;
 };
 
-character::character() :m_id(0), m_name(0), add_att_count(0), character_img_count(0) {}
+character::character() :init_id(0), m_name(0), add_att_count(0), character_img_count(0) {}
 
-character::character(int id, string name) : m_id(id), m_name(name), add_att_count(0), character_img_count(0) {}
+character::character(int id, string name) : init_id(id), m_name(name), add_att_count(0), character_img_count(0) {}
 
 void character::AddAttribute(string name, int value)
 {
@@ -305,3 +311,70 @@ scene::~scene()
 //////////////////////////////////////////////////////////////////////////
 //DEBUG
 //////////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////////////
+//视频
+//////////////////////////////////////////////////////////////////////////
+#include <Vfw.h>
+#pragma comment (lib, "Vfw32.lib")
+#pragma comment( lib, "MSIMG32.LIB")
+#pragma comment(lib,"Winmm.lib")
+
+class Video
+{
+public:
+	Video(string,int);
+	~Video();
+	void play();
+	
+private:
+	int i;
+	string s;
+	HWND hwnd = MCIWndCreate(GetHWnd(), NULL, WS_CHILD | WS_VISIBLE | MCIWNDF_NOMENU | MCIWNDF_NOPLAYBAR, NULL);
+};
+
+Video::Video(string address,int time):s(address),i(time)
+{
+	
+}
+
+void Video::play()
+{
+	SetWindowPos(hwnd, HWND_TOP, 0, 0, 0, 0, SWP_SHOWWINDOW);
+	MCIWndOpen(hwnd, s.c_str(), NULL);
+	MCIWndPlay(hwnd);
+	Sleep(i);
+	MCIWndClose(hwnd);
+	cleardevice();
+}
+
+Video::~Video()
+{
+}
+
+//////////////////////////////////////////////////////////////////////////
+//音乐
+//////////////////////////////////////////////////////////////////////////
+
+
+Music::Music(string address, string alias)
+{
+	this->address = "open " + address + " type MPEGVideo alias " + alias;
+	this->alias = "play " + alias;
+}
+
+void Music::prepare()
+{
+	mciSendString(address.c_str(), NULL, 0, NULL);
+}
+
+void Music::play()
+{
+	mciSendString(alias.c_str(), NULL, 0, NULL);
+}
+
+Music::~Music()
+{
+}
+
