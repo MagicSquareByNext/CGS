@@ -31,16 +31,7 @@ static wchar_t wcharBuffer[WCHAR_BUFFER_MAX];
 //´¦ÀíPNGÍ¼Æ¬
 //////////////////////////////////////////////////////////////////////////
 
-struct IMAGE_PNG
-{
-public:
-	int getHeight();
-	int getWidth();
-	IMAGE_PNG();
-	virtual ~IMAGE_PNG();
-	Gdiplus::Bitmap * pngImage;
-	float angle;
-};
+
 
 IMAGE_PNG::IMAGE_PNG()
 {
@@ -112,12 +103,12 @@ Gdiplus::Bitmap * ResizeBitmap(Gdiplus::Bitmap * bmpSrc, int destWidth, int dest
 	return bmpDest;
 }
 
-void loadimage(IMAGE_PNG * image, LPCTSTR pImgFile, int nWidth, int nHeight)
+void loadimage(IMAGE_PNG * image, const char* pImgFile, int nWidth, int nHeight)
 {
 	if (image == NULL || image->pngImage != NULL)
 		return;
 
-	wchar_t * wFileName = charToWChar(pImgFile);
+	wchar_t * wFileName = charToWChar((char*)pImgFile);
 
 	std::wcout << wFileName << endl;
 
