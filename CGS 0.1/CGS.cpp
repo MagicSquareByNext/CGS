@@ -7,21 +7,13 @@
 
 #include "stdafx.h"
 #include "CGS.h"
-#include <string>
-#include <string>
-using namespace std;
+
 #define MAX_IMAGE_LIST 100
-#include <iostream>
-#include <math.h>
+
 
 //////////////////////////////////////////////////////////////////////////
 //Gdi+
 //////////////////////////////////////////////////////////////////////////
-
-#pragma comment(lib, "./GDIPlus/Gdiplus.lib")
-#include "./GDIPlus/Includes/Gdiplus.h"
-
-using namespace Gdiplus;
 
 static ULONG_PTR gdiplusToken;
 static Gdiplus::GdiplusStartupInput gdiplusStartupInput;
@@ -31,8 +23,6 @@ static wchar_t wcharBuffer[WCHAR_BUFFER_MAX];
 //////////////////////////////////////////////////////////////////////////
 //¥¶¿ÌPNGÕº∆¨
 //////////////////////////////////////////////////////////////////////////
-
-
 
 IMAGE_PNG::IMAGE_PNG()
 {
@@ -317,11 +307,6 @@ scene::~scene()
 //////////////////////////////////////////////////////////////////////////
 // ”∆µ
 //////////////////////////////////////////////////////////////////////////
-#include <Vfw.h>
-#pragma comment (lib, "Vfw32.lib")
-#pragma comment( lib, "MSIMG32.LIB")
-#pragma comment(lib,"Winmm.lib")
-
 class Video
 {
 public:

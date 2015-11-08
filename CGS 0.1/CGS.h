@@ -2,13 +2,20 @@
 
 #include <easyx.h>
 #include <graphics.h>
+#include <iostream>
+#include <math.h>
+#include <string>
 #include "GDIPlus/Includes/Gdiplus.h"
 #include <string>
 #include <Vfw.h>
+
+#pragma comment(lib, "./GDIPlus/Gdiplus.lib")
 #pragma comment (lib, "Vfw32.lib")
 #pragma comment( lib, "MSIMG32.LIB")
 #pragma comment(lib,"Winmm.lib")
+
 using namespace std;
+using namespace Gdiplus;
 
 //初始化游戏窗口x,y
 void init_game(const int&, const int&);
