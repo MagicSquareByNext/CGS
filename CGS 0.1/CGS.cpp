@@ -8,6 +8,7 @@
 #include "stdafx.h"
 #include "CGS.h"
 #include <string>
+#include <string>
 using namespace std;
 #define MAX_IMAGE_LIST 100
 #include <iostream>

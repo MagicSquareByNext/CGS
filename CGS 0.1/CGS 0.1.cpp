@@ -7,6 +7,7 @@
 int main()
 {
 	init_game(1280, 720);
+	
 	POINT position = { 0 };//人物图片绘制的位置
 	float angle = 0.0f;//人物的角度
 	int width = 0;//图片宽
@@ -17,9 +18,9 @@ int main()
 	Music* mu_list[2];
 	//mu_list[0] = new Music("menu.mp3", "bgm");
 	//mu_list[1] = new Music("select.wav", "avd");
-	music_list_prepare(mu_list);
+//	music_list_prepare(mu_list);
 	BeginBatchDraw();//批量绘图开始
-	mu_list[0]->play();
+//	mu_list[0]->play();
 				//putimage(position.x, position.y, &img_man);
 	putimage(position.x, position.y, &img_man);//再贴旋转后的图片
 	EndBatchDraw();//批量绘图结束
