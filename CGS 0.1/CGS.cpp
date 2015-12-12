@@ -1,16 +1,49 @@
 //////////////////////////////////////////////////////////////////////////
-//ÈÃÃ¿Ò»¸ö×¡ÔÚ´óÉ½µÄĞ¡»ï°é¶¼ÓĞÒ»¸ö
-//´´ÔìÓÎÏ·µÄÃÎ
+//è®©æ¯ä¸€ä¸ªä½åœ¨å¤§å±±çš„å°ä¼™ä¼´éƒ½æœ‰ä¸€ä¸ª
+//åˆ›é€ æ¸¸æˆçš„æ¢¦
 //CreateGameStudio
-//2015Äê11ÔÂ4ÈÕ10:20:15-QuarterColor&MagicSquare
+//2015å¹´11æœˆ4æ—¥10:20:15-QuarterColor&MagicSquare
 //////////////////////////////////////////////////////////////////////////
-
 #include "stdafx.h"
 #include "CGS.h"
 
-#define MAX_IMAGE_LIST 100
+int CGSScreenXY[2];
 
+//////////////////////////////////////////////////////////////////////////
+//æ—¶é—´
+//////////////////////////////////////////////////////////////////////////
 
+GameTime::GameTime()
+{
+	GameRunTime = GetTickCount();
+}
+
+GameTime::~GameTime()
+{
+}
+
+inline void GameTime::SetStartTime()
+{
+	GameRunTime = GetTickCount();
+}
+
+inline void GameTime::GetNowTime()
+{
+	GamePlayTime = GetTickCount();
+	GameNowTime = GamePlayTime - GameRunTime;
+}
+
+inline const LONGLONG & GameTime::ReturnStartTime()
+{
+	return GameRunTime;
+}
+
+inline const LONGLONG & GameTime::ReturnNowTime()
+{
+	return GameNowTime;
+}
+
+GameTime Gtime;
 //////////////////////////////////////////////////////////////////////////
 //Gdi+
 //////////////////////////////////////////////////////////////////////////
@@ -21,7 +54,7 @@ static Gdiplus::GdiplusStartupInput gdiplusStartupInput;
 static wchar_t wcharBuffer[WCHAR_BUFFER_MAX];
 
 //////////////////////////////////////////////////////////////////////////
-//´¦ÀíPNGÍ¼Æ¬
+//å¤„ç†PNGå›¾ç‰‡
 //////////////////////////////////////////////////////////////////////////
 
 IMAGE_PNG::IMAGE_PNG()
@@ -61,13 +94,13 @@ wchar_t * charToWChar(const char * ss)
 
 Gdiplus::Bitmap * ResizeBitmap(Gdiplus::Bitmap * bmpSrc, int destWidth, int destHeight, bool keepAspect = false)
 {
-	//È¡µÃÔ´Í¼Æ¬¿í¶ÈºÍ¸ß¶È 
+	//å–å¾—æºå›¾ç‰‡å®½åº¦å’Œé«˜åº¦ 
 	int srcWidth = bmpSrc->GetWidth();
 	int srcHeight = bmpSrc->GetHeight();
-	//¼ÆËãºáÏòºÍ×İÏòµÄËõ·Å±ÈÂÊ 
+	//è®¡ç®—æ¨ªå‘å’Œçºµå‘çš„ç¼©æ”¾æ¯”ç‡ 
 	float scaleH = (float)destWidth / srcWidth;
 	float scaleV = (float)destHeight / srcHeight;
-	//Èç¹ûĞèÒª±£³Ö³¤¿í±È£¬ÔòºáÏòºÍ×İÏòÍ³Ò»²ÉÓÃ½ÏĞ¡µÄËõ·Å±ÈÂÊ 
+	//å¦‚æœéœ€è¦ä¿æŒé•¿å®½æ¯”ï¼Œåˆ™æ¨ªå‘å’Œçºµå‘ç»Ÿä¸€é‡‡ç”¨è¾ƒå°çš„ç¼©æ”¾æ¯”ç‡ 
 	if (keepAspect)
 	{
 		if (scaleH > scaleV)
@@ -79,15 +112,15 @@ Gdiplus::Bitmap * ResizeBitmap(Gdiplus::Bitmap * bmpSrc, int destWidth, int dest
 			scaleV = scaleH;
 		}
 	}
-	//¼ÆËãÄ¿±ê¿í¸ß 
+	//è®¡ç®—ç›®æ ‡å®½é«˜ 
 	destWidth = (int)(srcWidth * scaleH);
 	destHeight = (int)(srcHeight * scaleV);
-	//´´½¨Ä¿±êBitmap 
+	//åˆ›å»ºç›®æ ‡Bitmap 
 	Gdiplus::Bitmap * bmpDest = new Gdiplus::Bitmap(destWidth, destHeight, PixelFormat32bppARGB);
 	Gdiplus::Graphics graphic(bmpDest);
-	//ÉèÖÃ²åÖµËã·¨ 
+	//è®¾ç½®æ’å€¼ç®—æ³• 
 	graphic.SetInterpolationMode(Gdiplus::InterpolationModeHighQualityBicubic);
-	//½«Ô´Í¼Ïñ»æÖÆµ½Ä¿±êÍ¼ÏñÉÏ 
+	//å°†æºå›¾åƒç»˜åˆ¶åˆ°ç›®æ ‡å›¾åƒä¸Š 
 	graphic.DrawImage(bmpSrc, Gdiplus::Rect(0, 0, destWidth, destHeight),
 		0, 0, srcWidth, srcHeight, Gdiplus::UnitPixel);
 	graphic.Flush();
@@ -120,6 +153,15 @@ void putimage(int dstX, int dstY, IMAGE_PNG *image)
 	Gdiplus::Graphics * graphic = Gdiplus::Graphics::FromHDC(GetImageHDC());
 
 	graphic->DrawImage(image->pngImage, dstX, dstY, image->getWidth(), image->getHeight());
+	delete graphic;
+}
+
+void putimage(IMAGE_PNG *image ,IMAGE *img,int dstX, int dstY)
+{
+	Gdiplus::Graphics * graphic = Gdiplus::Graphics::FromHDC(GetImageHDC(img));
+
+	graphic->DrawImage(image->pngImage, dstX, dstY, image->getWidth(), image->getHeight());
+
 
 	delete graphic;
 }
@@ -129,175 +171,303 @@ void rotateimage(IMAGE_PNG *dstimg, IMAGE_PNG *srcimg, float angle)
 	if (dstimg == NULL || srcimg == NULL)
 		return;
 
-	//»ñµÃÔ­Ê¼Í¼Æ¬µÄ´óĞ¡
+	//è·å¾—åŸå§‹å›¾ç‰‡çš„å¤§å°
 	int srcWidth = srcimg->getWidth();
 	int srcHeight = srcimg->getHeight();
 
-	//¼ÆËã³öÔ­Ê¼Í¼Æ¬¶Ô½ÇÏßµÄ¾àÀë£¬×÷ÎªÄ¿±êÍ¼Æ¬µÄ³¤ºÍ¿í£¡
-	int dstWidth = sqrt(srcWidth*srcWidth + srcHeight*srcHeight);
+	//è®¡ç®—å‡ºåŸå§‹å›¾ç‰‡å¯¹è§’çº¿çš„è·ç¦»ï¼Œä½œä¸ºç›®æ ‡å›¾ç‰‡çš„é•¿å’Œå®½ï¼
+	int dstWidth = (int)sqrt(srcWidth*srcWidth + srcHeight*srcHeight);
 	int dstHeight = dstWidth;
 
 	if (dstimg->pngImage != NULL)
 		delete dstimg->pngImage;
 
-	//°´ÕÕÔ­Ê¼Í¼Æ¬¶Ô½ÇÏß³¤¶È£¬ÉèÖÃÄ¿±êÍ¼Æ¬³¤ºÍ¿í£¨ÕâÑù»æÖÆ³öµÄĞı×ªºóÍ¼Æ¬£¬²»»á±»¡°¼ô¼­¡±µô£¡£©
+	//æŒ‰ç…§åŸå§‹å›¾ç‰‡å¯¹è§’çº¿é•¿åº¦ï¼Œè®¾ç½®ç›®æ ‡å›¾ç‰‡é•¿å’Œå®½ï¼ˆè¿™æ ·ç»˜åˆ¶å‡ºçš„æ—‹è½¬åå›¾ç‰‡ï¼Œä¸ä¼šè¢«â€œå‰ªè¾‘â€æ‰ï¼ï¼‰
 	dstimg->pngImage = new Gdiplus::Bitmap(dstWidth, dstHeight, PixelFormat32bppARGB);
 
 	Gdiplus::Graphics graphic(dstimg->pngImage);
 
-	Pen * pen = new Pen(Color::Yellow);//¸¨ÖúÏß£¬²âÊÔÓÃ
-									   //graphic.DrawRectangle(pen, 0, 0, dstWidth - 1, dstHeight - 1);//¸¨ÖúÏß£¬²âÊÔÓÃ¡£»æÖÆ³öĞı×ªºóÍ¼Æ¬µÄ±ß½ç
+	Pen * pen = new Pen(Color::Yellow);//è¾…åŠ©çº¿ï¼Œæµ‹è¯•ç”¨
+									   //graphic.DrawRectangle(pen, 0, 0, dstWidth - 1, dstHeight - 1);//è¾…åŠ©çº¿ï¼Œæµ‹è¯•ç”¨ã€‚ç»˜åˆ¶å‡ºæ—‹è½¬åå›¾ç‰‡çš„è¾¹ç•Œ
 
-	Matrix m;//¾ØÕó±ä»»ÓÃµÄ¾ØÕó±äÁ¿
-	PointF cp(REAL(srcWidth / 2.0f), REAL(srcHeight / 2.0f));//center point£¬Ğı×ªµÄÖĞĞÄ
+	Matrix m;//çŸ©é˜µå˜æ¢ç”¨çš„çŸ©é˜µå˜é‡
+	PointF cp(REAL(srcWidth / 2.0f), REAL(srcHeight / 2.0f));//center pointï¼Œæ—‹è½¬çš„ä¸­å¿ƒ
 	PointF mp(REAL((dstWidth - srcWidth) / 2.0f), (dstHeight - srcHeight) / 2.0f);
 
-	//×¢Òâ£¬¾ØÕó±ä»»µÄË³ĞòÊÇ·´µÄ£¡Ò²¾ÍÊÇËµ£¬ÏÂÃæ´úÂëµÄĞ§¹ûÏàµ±ÓÚÏÈĞı×ª£¬ºóÒÆ¶¯£¡
-	m.Translate(mp.X, mp.Y);//Ğ§¹ûÎª£ºÏÈ½«Ô­Ê¼Í¼Æ¬ÖĞĞÄµãÒÆ¶¯µ½Ä¿±êÍ¼Æ¬µÄÖĞĞÄ¡£
-	m.RotateAt(angle, cp);//Ğ§¹ûÎª£ºÔÙÒÔÄ¿±êÍ¼Æ¬µÄÖĞĞÄµã½øĞĞĞı×ª¡£
-	graphic.SetTransform(&m);//ÉèÖÃ¾ØÕó±ä»»ÓÃµÄ¾ØÕó±äÁ¿¡£
+	//æ³¨æ„ï¼ŒçŸ©é˜µå˜æ¢çš„é¡ºåºæ˜¯åçš„ï¼ä¹Ÿå°±æ˜¯è¯´ï¼Œä¸‹é¢ä»£ç çš„æ•ˆæœç›¸å½“äºå…ˆæ—‹è½¬ï¼Œåç§»åŠ¨ï¼
+	m.Translate(mp.X, mp.Y);//æ•ˆæœä¸ºï¼šå…ˆå°†åŸå§‹å›¾ç‰‡ä¸­å¿ƒç‚¹ç§»åŠ¨åˆ°ç›®æ ‡å›¾ç‰‡çš„ä¸­å¿ƒã€‚
+	m.RotateAt(angle, cp);//æ•ˆæœä¸ºï¼šå†ä»¥ç›®æ ‡å›¾ç‰‡çš„ä¸­å¿ƒç‚¹è¿›è¡Œæ—‹è½¬ã€‚
+	graphic.SetTransform(&m);//è®¾ç½®çŸ©é˜µå˜æ¢ç”¨çš„çŸ©é˜µå˜é‡ã€‚
 
-							 //»æÍ¼£¬Í¬Ê±½øĞĞ¾ØÕó±ä»»
+							 //ç»˜å›¾ï¼ŒåŒæ—¶è¿›è¡ŒçŸ©é˜µå˜æ¢
 	graphic.DrawImage(srcimg->pngImage, Gdiplus::Rect(0, 0, srcWidth, srcHeight),
 		0, 0, srcWidth, srcHeight, Gdiplus::UnitPixel);
-	//graphic.DrawRectangle(pen, 0, 0, srcWidth - 1, srcHeight - 1);//¸¨ÖúÏß£¬²âÊÔÓÃ¡£»æÖÆ³öÔ­Ê¼Í¼Æ¬ÔÚÄ¿±êÍ¼¿òÖĞµÄÎ»ÖÃ¡£
+	//graphic.DrawRectangle(pen, 0, 0, srcWidth - 1, srcHeight - 1);//è¾…åŠ©çº¿ï¼Œæµ‹è¯•ç”¨ã€‚ç»˜åˆ¶å‡ºåŸå§‹å›¾ç‰‡åœ¨ç›®æ ‡å›¾æ¡†ä¸­çš„ä½ç½®ã€‚
 
 	delete pen;
 }
-//////////////////////////////////////////////////////////////////////////
-//³õÊ¼»¯¡¢½áÊø
-//////////////////////////////////////////////////////////////////////////
-
-void init_game(const int& x, const int& y)
-{
-	initgraph(x, y);
-	Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
-}
-
-void close_game()
-{
-	if (gdiplusToken)
-		Gdiplus::GdiplusShutdown(gdiplusToken);
-	closegraph();
-}
 
 //////////////////////////////////////////////////////////////////////////
-//ÔªËØÀà
+//å…ƒç´ ç±»
 //////////////////////////////////////////////////////////////////////////
 
-//¸½¼ÓÊôĞÔÀà
-class Adt
+
+element::element() :mHit(false), mKeyboardHit(false), mMouseHit(false), mMouseHover(false) {}
+
+
+element::element(const int& x, const int& y, const int& Lenth, const int& Width) : mHit(false), mKeyboardHit(false), mMouseHit(false), mMouseHover(false)
 {
-public:
-	Adt()
-	{
-		add_attribute = '0';
-		m_value = 0;
-	}
-	Adt(string name,int value):add_attribute(name),m_value(value)
-	{
-		add_attribute = '0';
-		m_value = 0;
-	}
-	~Adt()
-	{
-
-	}
-	const string name()
-	{
-		return add_attribute;
-	}
-	void setValue(int value)
-	{
-		m_value = value;
-	}
-	void value(int& va)
-	{
-		va = m_value;
-	}
-private:
-	string add_attribute;
-	int m_value;
-};
-
-//´´½¨½ÇÉ«
-class character
-{
-public:
-	character();
-	character(int, string);
-	~character();
-	//Ìí¼Ó¸½¼ÓÊôĞÔ
-	void AddAttribute(string, int);
-	//¸Ä±ä¸½¼ÓÊôĞÔ
-	void changeAddAttribute(string, int);
-	void SetCharacterIMG()
-	{
-
-	}
-private:
-	int searchAddAttribute(string);
-	int init_id,init_life,init_blue;
-	int real_life, real_blue;
-	int max_life, max_blue;
-	string m_name;
-	IMAGE character_img[MAX_IMAGE_LIST];
-	int character_img_count;
-	Adt* add_attribute[100];
-	int add_att_count;
-};
-
-character::character() :init_id(0), m_name(0), add_att_count(0), character_img_count(0) {}
-
-character::character(int id, string name) : init_id(id), m_name(name), add_att_count(0), character_img_count(0) {}
-
-void character::AddAttribute(string name, int value)
-{
-	add_attribute[add_att_count] = new Adt(name,value);
-	add_att_count++;
+	mXY[0] = x;
+	mXY[1] = y;
+	mSize[0] = Lenth;
+	mSize[1] = Width;
 }
 
-int character::searchAddAttribute(string name)
+void element::Putimage(const int& i, const int& x, const int& y)
 {
-	for (int i = 0;i < add_att_count;i++)
+	if (x == -1 && y != -1)
+		putimage(mXY[0], y, &ElementImg[i]);
+	else if (y == -1 && x != -1)
+		putimage(x, mXY[1], &ElementImg[i]);
+	else if (x == -1 && y == -1)
+		putimage(mXY[0], mXY[1], &ElementImg[i]);
+	else
+		putimage(x, y, &ElementImg[i]);
+}
+
+void element::SetElementAnimation(const int & orderNumber, const int & start, const int & end)
+{
+	ElementAnimation[orderNumber][0] = start;
+	ElementAnimation[orderNumber][1] = end;
+}
+
+void element::PlayElementAnimation(const int& orderNumber, int& cald, const int& type, const int& time)
+{
+	if (cald==0)
 	{
-		if (add_attribute[i]->name() == name) return i;
+		cal = ElementAnimation[orderNumber][0];
+		TimeTemp = (LONGLONG)time / (ElementAnimation[orderNumber][1] - ElementAnimation[orderNumber][0]);
+		cald = 1;
 	}
-	return -1;
+	
+	if (type == 0)
+	{
+		
+		if (cal >= ElementAnimation[orderNumber][1] + 1) return;
+		if (Gtime.ReturnNowTime() - AnimateStartTime >= TimeTemp*(cal-ElementAnimation[orderNumber][0]))
+		{
+			Putimage(mXY[0], mXY[1], cal);
+			if (ElementAnimation[orderNumber][1] <= cal) cal++;
+		}
+		else Putimage(mXY[0], mXY[1], cal);
+	}
+	else if (type == 1)
+	{
+		if (cal >= ElementAnimation[orderNumber][1] + 1) cal = ElementAnimation[orderNumber][0];
+		if (Gtime.ReturnNowTime() - AnimateStartTime >= TimeTemp*(cal - ElementAnimation[orderNumber][0]))
+		{
+			Putimage(mXY[0], mXY[1], cal);
+			if (ElementAnimation[orderNumber][1] < cal) cal++;
+		}
+		else Putimage(mXY[0], mXY[1], cal);
+	}
+	else if (type == 2)
+	{
+		int count = (ElementAnimation[orderNumber][1] - ElementAnimation[orderNumber][0]);
+		int temp = count - abs(count - cal);
+		if (temp >= ElementAnimation[orderNumber][1] + 1) temp = ElementAnimation[orderNumber][0];
+		if (Gtime.ReturnNowTime() - AnimateStartTime >= TimeTemp*(cal - ElementAnimation[orderNumber][0]))
+		{
+			Putimage(mXY[0], mXY[1], temp);
+			if (ElementAnimation[orderNumber][1] < temp) cal++;
+			if(temp>=count*2) cal = ElementAnimation[orderNumber][0];
+		}
+		else Putimage(mXY[0], mXY[1], cal);
+	}
 }
 
-void character::changeAddAttribute(string name, int value)
+void element::Prepare()
 {
-	if (int q = searchAddAttribute(name) != -1)
-		add_attribute[q]->setValue(value);
+	for (int j = 0; j < ElementImgCount; j++)
+	{
+		loadimage(&ElementImg[j], ElementImgUrl[j].c_str());
+	}
 }
 
-character::~character()
+string inline element::getstring(const int& n)
+{
+	std::stringstream newstr;
+	newstr << n;
+	return newstr.str();
+}
+
+void element::SetElementIMG(const string& url)
+{
+	ElementImgUrl[ElementImgCount] = url;
+	ElementImgCount++;
+}
+
+void element::SetElementIMG(const string& url, const int& i)
+{
+	for (int j = 0; j < i; j++)
+	{
+		ElementImgUrl[ElementImgCount] = url + getstring(j) + ".png";
+	}
+	ElementImgCount = i;
+}
+
+void element::SetElementPosition(const int & x, const int & y)
+{
+	if (x > -1)
+		mXY[0] = x;
+	if (y > -1)
+		mXY[1] = y;
+}
+
+void element::SetHit(const bool& hit)
+{
+	mHit = hit;
+}
+
+void element::SetMouseHit(const bool& hit)
+{
+	mMouseHit = hit;
+}
+
+void element::SetMouseHover(const bool& hit)
+{
+	mMouseHover = hit;
+}
+
+void element::SetKeyboardHit(const bool& hit)
+{
+	mKeyboardHit = hit;
+}
+
+const bool& element::IsHit()
+{
+	return mHit;
+}
+
+const bool& element::IsMouseHit()
+{
+	return mMouseHit;
+}
+
+const bool& element::IsMouseHover()
+{
+	return mMouseHover;
+}
+
+const bool& element::IsKeyboardHit()
+{
+	return mKeyboardHit;
+}
+
+const int& element::ReturnPositionX()
+{
+	return mXY[0];
+}
+
+const int& element::ReturnPositionY()
+{
+	return mXY[1];
+}
+
+const bool  element::IsOutscreen()
+{
+	if (mXY[0] > CGSScreenXY[0] || mXY[1] > CGSScreenXY[1] || mXY[0] < 0 || mXY[1] < 0)return true;
+	return false;
+}
+
+const int& element::ReturnSizeLenth()
+{
+	return mSize[0];
+}
+
+const int& element::ReturnSizeWidth()
+{
+	return mSize[1];
+}
+
+element::~element()
 {
 
 }
 
 //////////////////////////////////////////////////////////////////////////
-//³¡¾°Àà
+//åœºæ™¯ç±»
 //////////////////////////////////////////////////////////////////////////
 
-class scene
+string inline scene::getstring(const int n)
 {
-public:
-	scene();
-	~scene();
+	std::stringstream newstr;
+	newstr << n;
+	return newstr.str();
+}
 
-private:
-
-};
-
-scene::scene()
+scene::scene(string str)
 {
+	m_str[count] = str;
+	count++;
+}
+
+void scene::Prepare()
+{
+	for (int i = 0; i < count; i++)
+	{
+		loadimage(&img[i], m_str[i].c_str(), img[i].getwidth(), img[i].getheight());
+	}
+}
+
+scene::scene(string str, int i, string file)
+{
+	for (int j = 0; j < i; j++)
+	{
+		m_str[j] = str + getstring(j) + '.' + file;
+	}
+	count = i;
+}
+
+void scene::PlayScene(int i)
+{
+	if (i >= count) return;
+	putimage(0, 0, &img[i]);
+}
+
+void scene::PlayScene(const int& i, const int & x, const int & y)
+{
+	if (i >= count) return;
+	putimage(x, y, &img[i]);
+}
+
+void scene::Play(void(*fun)())
+{
+	for (int j = 0; j < count; j++)
+	{
+		putimage(0, 0, &img[j]);
+		fun();
+	}
+}
+
+void scene::Play(void(*fun)(const int&))
+{
+	for (int j = 0; j < count; j++)
+	{
+		putimage(0, 0, &img[j]);
+		fun(j);
+	}
 }
 
 scene::~scene()
 {
 }
+
+void scene::Pause()
+{
+	_getch();
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 //DEBUG
@@ -305,62 +475,472 @@ scene::~scene()
 
 
 //////////////////////////////////////////////////////////////////////////
-//ÊÓÆµ
+//è§†é¢‘
 //////////////////////////////////////////////////////////////////////////
-class Video
-{
-public:
-	Video(string,int);
-	~Video();
-	void play();
-	
-private:
-	int i;
-	string s;
-	HWND hwnd = MCIWndCreate(GetHWnd(), NULL, WS_CHILD | WS_VISIBLE | MCIWNDF_NOMENU | MCIWNDF_NOPLAYBAR, NULL);
-};
 
-Video::Video(string address,int time):s(address),i(time)
-{
-	
-}
 
-void Video::play()
+video::video(string address, int time) :s(address), i(time) {}
+
+void video::Play()
 {
 	SetWindowPos(hwnd, HWND_TOP, 0, 0, 0, 0, SWP_SHOWWINDOW);
 	MCIWndOpen(hwnd, s.c_str(), NULL);
 	MCIWndPlay(hwnd);
 	Sleep(i);
 	MCIWndClose(hwnd);
+	MCIWndDestroy(hwnd);
+	hwnd = NULL;
 	cleardevice();
 }
 
-Video::~Video()
+video::~video()
 {
 }
 
 //////////////////////////////////////////////////////////////////////////
-//ÒôÀÖ
+//éŸ³ä¹
 //////////////////////////////////////////////////////////////////////////
 
-
-Music::Music(string address, string alias)
+music::music(const string& address, const string& alias)
 {
 	this->address = "open " + address + " type MPEGVideo alias " + alias;
-	this->alias = "play " + alias;
+	this->mPlay = "play " + alias;
+	this->mPause = "pause " + alias;
+	this->mStop = "stop " + alias;
+	this->mClose = "close " + alias;
 }
 
-void Music::prepare()
+void music::Prepare()
 {
 	mciSendString(address.c_str(), NULL, 0, NULL);
 }
 
-void Music::play()
+void music::Play()
 {
-	mciSendString(alias.c_str(), NULL, 0, NULL);
+	mciSendString(mPlay.c_str(), NULL, 0, NULL);
 }
 
-Music::~Music()
+void music::Pause()
 {
+	mciSendString(mPause.c_str(), NULL, 0, NULL);
+}
+
+void music::Stop()
+{
+	mciSendString(mStop.c_str(), NULL, 0, NULL);
+}
+
+void music::Close()
+{
+	mciSendString(mClose.c_str(), NULL, 0, NULL);
+}
+
+music::~music()
+{
+}
+
+template<int N>
+void music::ListPrepare(music* (&mu_list)[N])
+{
+	for (int i = 0; i < N; i++)
+	{
+		if (mu_list[i])
+		{
+			mu_list[i]->Prepare();
+		}
+	}
+}
+
+void music::CloseAll()
+{
+	mciSendString("close all", NULL, 0, NULL);
+}
+
+//////////////////////////////////////////////////////////////////////////
+//åŸºç¡€ç±»
+//by é»„æ—¥æ™Ÿ å®Œæˆæ—¶é—´ï¼š2015å¹´11æœˆ12æ—¥
+//////////////////////////////////////////////////////////////////////////
+
+base::base()
+{
+}
+
+const int base::AddElementTrack(int id, element* ElementA, int VK)
+{
+	if (ElementList==NULL)
+	{
+		ElementList = new TrackElement(id, NULL, ElementA, SetVK(VK));
+		return id;
+	}
+
+	TrackElement* P = ElementList;
+	while (P->nAfter)
+	{
+		P = P->nAfter;
+	}
+	ElementList = new TrackElement(id, NULL, ElementA, SetVK(VK));
+	ElementListCount++;
+	return id;
+}
+
+const int base::AddElementTrack(int id, element* ElementA)
+{
+	if (ElementList == NULL)
+	{
+		ElementList = new TrackElement(id, NULL, ElementA);
+		return id;
+	}
+
+	TrackElement* P = ElementList;
+	while (P->nAfter)
+	{
+		P = P->nAfter;
+	}
+	P->nAfter = new TrackElement(id, P, ElementA);
+	ElementListCount++;
+	return id;
+}
+
+const int base::AddElementTrack(int id, element *ElementA, element *ElementB, bool & b)
+{
+	if (ElementList == NULL)
+	{
+		ElementList = new TrackElement(id, NULL, ElementA, ElementB, b);
+		return id;
+	}
+	TrackElement* P = ElementList;
+	while (P->nAfter)
+	{
+		P = P->nAfter;
+	}
+	P->nAfter = new TrackElement(id, P, ElementA, ElementB, b);
+	ElementListCount++;
+	return id;
+}
+
+void base::Baserun(const int& time)
+{
+	CleanKeyboardHit();
+	FlushBatchDraw();
+	Sleep(time);
+	if(MouseHit())
+		m = GetMouseMsg();
+	GetKeyboardHit();
+	Gtime.GetNowTime();
+	track();
+	cleardevice();
+	BeginBatchDraw();
+}
+const char& base::KeyBoardHit() const
+{
+	return key;
+}
+const MOUSEMSG& base::Mouse() const
+{
+	return m;
+}
+
+void base::track()
+{
+	TrackElement *p=ElementList;
+	while (p)
+	{
+		if (p->ElementTrackStyle == 1)
+		{
+			if (p->Element[0]->ReturnPositionX() >= p->Element[1]->ReturnPositionX() && p->Element[0]->ReturnPositionX() >= (p->Element[1]->ReturnPositionX() + p->Element[1]->ReturnSizeLenth())) *p->ElementBool = false;
+			else if (p->Element[0]->ReturnPositionX() <= p->Element[1]->ReturnPositionX() && p->Element[1]->ReturnPositionX() >= (p->Element[0]->ReturnPositionX() + p->Element[0]->ReturnSizeLenth())) *p->ElementBool = false;
+			else if (p->Element[0]->ReturnPositionY() >= p->Element[1]->ReturnPositionY() && p->Element[0]->ReturnPositionY() >= (p->Element[1]->ReturnPositionY() + p->Element[1]->ReturnSizeWidth())) *p->ElementBool = false;
+			else if (p->Element[0]->ReturnPositionY() <= p->Element[1]->ReturnPositionY() && p->Element[1]->ReturnPositionY() >= (p->Element[0]->ReturnPositionY() + p->Element[0]->ReturnSizeWidth())) *p->ElementBool = false;
+			*p->ElementBool = true;
+		}
+		else if (p->ElementTrackStyle == 2)
+		{
+			if (m.x >= p->Element[0]->ReturnPositionX() &&
+				m.x <= p->Element[0]->ReturnPositionX() + p->Element[0]->ReturnSizeLenth() &&
+				m.y >= p->Element[0]->ReturnPositionY() &&
+				m.y <= p->Element[0]->ReturnPositionY() + p->Element[0]->ReturnSizeWidth())
+			{
+				p->Element[0]->SetMouseHover(true);
+				if (m.uMsg == WM_LBUTTONDOWN)
+				{
+					p->Element[0]->SetMouseHit(true);
+				}
+			}
+			else
+			{
+				p->Element[0]->SetMouseHover(false);
+				p->Element[0]->SetMouseHit(false);
+			}
+		}
+		else if (p->ElementTrackStyle == 3)
+		{
+			if (VK_CODE[1][p->ElementPlace] == 1)
+			{
+				p->Element[0]->SetKeyboardHit(true);
+			}
+			else
+			{
+				p->Element[0]->SetKeyboardHit(false);
+			}
+		}
+		p = p->nAfter;
+	}
+}
+
+const int base::SetVK(int VK)
+{
+	for (int i=0;i < VK_CODE_Count;i++)
+	{
+		if (VK_CODE[0][i] == VK) return i;
+	}
+	VK_CODE[0][VK_CODE_Count] = VK;
+	VK_CODE[1][VK_CODE_Count] = 0;
+	VK_CODE_Count++;
+	return VK_CODE_Count - 1;
+}
+
+void base::DelElementTrack(const int & i)
+{
+	TrackElement* p = ElementList;
+	while (p)
+	{
+		if (p->id == i)
+		{
+			delete p;
+		}
+	}
+	ElementListCount--;
+}
+
+void base::CleanKeyboardHit()
+{
+	FlushConsoleInputBuffer(GetStdHandle(STD_INPUT_HANDLE));
+	key = NULL;
+}
+
+void base::GetKeyboardHit()
+{
+	for (int i = 0;i < VK_CODE_Count;i++)
+	{
+		if (VK_CODE[0][i]!=0)
+		{
+			VK_CODE[1][i]=((GetAsyncKeyState(VK_CODE[0][i]) & 0x8000) ? 1 : 0);
+		}
+	}
+	//if (_kbhit()) key = _getch();
+}
+
+void base::InitGame(const int& x, const int& y)
+{
+	initgraph(x, y);
+	CGSScreenXY[0] = x;
+	CGSScreenXY[1] = y;
+	Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
+}
+
+void base::CloseGame()
+{
+	if (gdiplusToken)
+		Gdiplus::GdiplusShutdown(gdiplusToken);
+	closegraph();
+}
+
+base::~base()
+{
+	TrackElement *p = ElementList;
+	if(p)
+		while (p->nAfter)
+		{
+			p = p->nAfter;
+		}
+	else
+	{
+		return;
+	}
+	while (p != ElementList)
+	{
+		p = p->nBefore;
+		delete p->nAfter;
+	}
+	delete ElementList;
+	return;
+}
+
+TrackElement::TrackElement(int id, TrackElement * before, element * thisElement)
+{
+	this->id = id;
+	Element[0] = thisElement;
+	Element[1] = NULL;
+	ElementTrackStyle = 2;
+	ElementBool = NULL;
+	ElementPlace = NULL;
+	nBefore = before;
+	before->nAfter = this;
+	nAfter = NULL;
+}
+
+TrackElement::TrackElement(int id, TrackElement * before, element *thisElement,int place)
+{
+	this->id = id;
+	Element[0] = thisElement;
+	Element[1] = NULL;
+	ElementTrackStyle = 3;
+	ElementBool = NULL;
+	ElementPlace = place;
+	nBefore = before;
+	before->nAfter = this;
+	nAfter = NULL;
+}
+
+TrackElement::TrackElement(int id, TrackElement *before, element *thisElementA, element *thisElementB, bool b)
+{
+	this->id = id;
+	Element[0] = thisElementA;
+	Element[1] = thisElementB;
+	ElementTrackStyle = 1;
+	ElementPlace = NULL;
+	ElementBool = &b;
+	nBefore = before;
+	before->nAfter = this;
+	nAfter = NULL;
+}
+
+TrackElement::~TrackElement()
+{
+	id = NULL;
+	Element[0] = NULL;
+	Element[1] = NULL;
+	ElementPlace = NULL;
+	ElementTrackStyle = NULL;
+	ElementBool = NULL;
+	if (nBefore != NULL) 
+		nBefore->nAfter = nAfter;
+	if (nAfter != NULL)
+		nAfter->nBefore = nBefore;
+	nBefore = NULL;
+	nAfter = NULL;
+}
+
+
+AnimationList::~AnimationList()
+{
+}
+
+void AnimationList::Play()
+{
+	if (!now)
+		return;
+	putimage(0, 0, now->img);
+	now=now->nAfter;
+}
+
+ImageList & AnimationList::CreateIL()
+{
+	if (!ImageLoadList)
+	{
+		ImageLoadList = new ImageList;
+		ImageLoadList->nAfter = NULL;
+		ImageLoadList->nBefore = NULL;
+		ImageLoadList->img = new IMAGE(1280, 720);
+		now = ImageLoadList;
+		count++;
+		return *ImageLoadList;
+	}
+	ImageList *p;
+	p = ImageLoadList;
+	while (p)
+	{
+		p = p->nAfter;
+	}
+	p->nAfter = new ImageList;
+	p->nAfter->nBefore = p;
+	p->nAfter->nAfter = NULL;
+	p->nAfter->img = new IMAGE(1280, 720);
+	count++;
+	p->nAfter->n = count;
+	return *p;
+}
+
+void AnimationList::Prepare()
+{
+	SetWorkingImage(CreateIL().img);
+	nowRender++;
+}
+
+const int & AnimationList::ReturnNowRender()
+{
+	return nowRender;
+	// TODO: åœ¨æ­¤å¤„æ’å…¥ return è¯­å¥
+}
+
+void AnimationList::Goto(int i)
+{
+	ImageList *p = now;
+	if (p->n==i)
+	{
+		return;
+	}
+	else if (p->n<i)
+	{
+		while (p)
+		{
+			if (p->n == i)
+			{
+				now = p;
+				return;
+			}
+			p = p->nBefore;
+		}
+	}
+	else
+	{
+		while (p)
+		{
+			if (p->n == i)
+			{
+				now = p;
+				return;
+			}
+			p = p->nAfter;
+		}
+	}
+	return;
+}
+
+IMAGE & AnimationList::NowIMAGE()
+{
+	return *now->img;
+	// TODO: åœ¨æ­¤å¤„æ’å…¥ return è¯­å¥
+}
+
+void AnimationList::ControlAnimation(int n)
+{
+	if (STATE_CA == 0)
+	{
+		START_Time = Gtime.ReturnNowTime();
+		STATE_CA = 1;
+	}
+	if (STATE_CA == 0)
+	{
+		NOW_Time_A = Gtime.ReturnNowTime();
+		STATE_CA = 2;
+	}
+	NOW_Time_B = Gtime.ReturnNowTime();
+	preCount++;
+	if (NOW_Time_B-NOW_Time_A>=1000)
+	{
+		STATE_CA = 1;
+		if (preCount<n)
+		{
+			Goto(nowRender + n - preCount);
+			nowRender += n - preCount;
+		}
+		preCount = 0;
+	}
+}
+
+void AnimationList::EndPrepare()
+{
+	SetWorkingImage();
 }
 
